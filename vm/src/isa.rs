@@ -50,6 +50,19 @@ pub enum Op {
         }
 
         match bytes[0] {
+            0x01 => {
+                if bytes.len() < 9 {
+                    return Err(DecodeError::TruncatedInstruction);
+                }
+
+                let num_bytes: [u8; 8] = bytes[1..9]//converts &[u8] type to an Array of type [u8,8]
+                    .try_into()
+                    .unwrap();
+
+                let value = i64::from_le_bytes(num_bytes);// convert bytes-> i64
+
+                Ok((Op::Push(value), 9))
+            }
             0x02 => Ok((Op::Pop, 1)),
             0x03 => Ok((Op::Dup, 1)),
             0x04 => Ok((Op::Swap, 1)),
@@ -60,7 +73,19 @@ pub enum Op {
             0x13 => Ok((Op::Div, 1)),
             0x14 => Ok((Op::Mod, 1)),
             0x15 => Ok((Op::Neg, 1)),
-
+            
+            0x40 =>{
+                if bytes.len()<2{
+                    return Err(DecodeError::TruncatedInstruction)
+                }
+                Ok((Op::Load(bytes[1]),2))// bytes[1]=slot number, bytes[0]=load->64
+            }
+            0x41 =>{
+                if bytes.len()<2{
+                    return Err(DecodeError::TruncatedInstruction)
+                }
+                Ok((Op::Store(bytes[1]),2))// bytes[1]=slot number, bytes[0]=load->65
+            }
             0x60 => Ok((Op::Print, 1)),
             0xFF => Ok((Op::Halt, 1)),
 
