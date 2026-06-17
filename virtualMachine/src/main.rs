@@ -64,5 +64,4 @@ fn main() {
     Op::Halt.encode(&mut bytes);
 
     let mut vm = Vm::new();
-    vm.run(&bytes);
 }
