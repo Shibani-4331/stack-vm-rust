@@ -2,14 +2,18 @@ use crate::isa::Op;
 
 pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
     let mut bytes = Vec::new();
+    let mut saw_halt = false;
     for (line_no, line) in source.lines().enumerate() {
-        let line = line.trim();
+        let line = line.split(';').next().unwrap().trim().to_uppercase();
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.is_empty() {
             continue;
         }
         match parts[0] {
-            "HALT" => Op::Halt.encode(&mut bytes),
+            "HALT" => {
+                saw_halt = true;
+                Op::Halt.encode(&mut bytes)
+            }
             "PUSH" => {
                 if parts.len() < 2 {
                     return Err(format!("Line {}: PUSH requires an operand",line_no + 1));
@@ -23,7 +27,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
             }
             "LOAD" => {
                 if parts.len() < 2 {
-                    return Err(format!("Line {}: PUSH requires an operand",line_no + 1));
+                    return Err(format!("Line {}: LOAD requires an operand",line_no + 1));
                 }
                 let slot: u8 = parts[1].parse()
                     .map_err(|_|{format!("Line {}: invalid number '{}'",line_no+1,parts[1])})?;
@@ -31,7 +35,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
             }
             "STORE" => {
                 if parts.len() < 2 {
-                    return Err(format!("Line {}: PUSH requires an operand",line_no + 1));
+                    return Err(format!("Line {}: STORE requires an operand",line_no + 1));
                 }
                 let slot: u8 = parts[1].parse()
                     .map_err(|_|{format!("Line {}: invalid number '{}'",line_no+1,parts[1])})?;
@@ -54,6 +58,9 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                 return Err(format!("Line {}: unknown instruction '{}'",line_no + 1,parts[0]));
             }
         }
+    }
+    if !saw_halt {
+        eprintln!("warning: program does not end with HALT");
     }
     Ok(bytes)
 }
