@@ -1,9 +1,14 @@
 mod isa;
 mod vm;
 mod assembler;
+mod bytecode;
 
 use isa::Op;
 use vm::Vm;
+use bytecode::{write_program, read_program};
+use std::fs;
+
+use crate::assembler::assemble;
 
 fn main() {
     // let mut bytes = Vec::new();
@@ -65,13 +70,27 @@ fn main() {
     // Op::Halt.encode(&mut bytes);
 
     // let mut vm = Vm::new();
-    let src = "
-    PUSH 42
-    STORE 0
-    LOAD 0
-    PRINT
-    HALT
-    ";
-    let bytes = assembler::assemble(src).unwrap();
-    println!("{:?}", bytes);
+    // let src = "
+    // PUSH 42
+    // STORE 0
+    // LOAD 0
+    // PRINT
+    // HALT
+    // ";
+    // let bytes = assembler::assemble(src).unwrap();
+    // println!("{:?}", bytes);
+
+    // let code = vec![0xFF];
+    // let file = write_program(&code);
+    // println!("{:?}", file);
+
+    // let code = vec![1, 2, 3, 255];
+    // let file = write_program(&code);
+    // let recovered = read_program(&file).unwrap();
+    // println!("{:?}", recovered);
+
+    let source = fs::read_to_string("program.tasm").unwrap();
+    let code = assemble(&source).unwrap();
+    let file_bytes = write_program(&code);
+    fs::write("program.tbc", &file_bytes).unwrap();
 }
