@@ -4,14 +4,15 @@ mod assembler;
 mod bytecode;
 mod disassembler;
 
-// use isa::Op;
-// use vm::Vm;
-// use bytecode::{write_program, read_program};
+use isa::Op;
+use vm::Vm;
+use bytecode::{write_program, read_program};
 use std::fs;
 use crate::assembler::assemble;
 use disassembler::disassemble;
 
 fn main() {
+    
     // let mut bytes = Vec::new();
 
     // // STORE / LOAD
@@ -90,8 +91,8 @@ fn main() {
     // let recovered = read_program(&file).unwrap();
     // println!("{:?}", recovered);
 
-    let source = fs::read_to_string("program.tasm").unwrap();
-    let code = assemble(&source).unwrap();
+    // let source = fs::read_to_string("program.tasm").unwrap();
+    // let code = assemble(&source).unwrap();
     // let file_bytes = write_program(&code);
     // fs::write("program.tbc", &file_bytes).unwrap();
 
@@ -100,7 +101,66 @@ fn main() {
     // let mut vm = Vm::new();
     // vm.run(&code, false).unwrap();
 
-    let text = disassemble(&code).unwrap();
-    println!("{}",text);
+    // let text = disassemble(&code).unwrap();
+    // println!("{}",text);
 
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() < 3 {
+        eprintln!("Usage:");
+        eprintln!("  vm asm <file.tasm>");
+        eprintln!("  vm run <file.tbc>");
+        eprintln!("  vm dis <file.tbc>");
+        return;
+    }
+
+    let command = &args[1];
+    let filename = &args[2];
+
+    match command.as_str() {
+        "asm" => {
+            let source = std::fs::read_to_string(filename)
+                .expect("Failed to read source file");
+
+            let code = assemble(&source)
+                .expect("Assembly failed");
+
+            let file_bytes = write_program(&code);
+
+            std::fs::write("program.tbc", file_bytes)
+                .expect("Failed to write bytecode file");
+
+            println!("Assembled successfully.");
+        }
+
+        "run" => {
+            let file_bytes = std::fs::read(filename)
+                .expect("Failed to read bytecode file");
+
+            let code = read_program(&file_bytes)
+                .expect("Invalid bytecode file");
+
+            let mut vm = Vm::new();
+
+            vm.run(&code, false)
+                .expect("VM execution failed");
+        }
+
+        "dis" => {
+            let file_bytes = std::fs::read(filename)
+                .expect("Failed to read bytecode file");
+
+            let code = read_program(&file_bytes)
+                .expect("Invalid bytecode file");
+
+            let text = disassemble(&code)
+                .expect("Disassembly failed");
+
+            println!("{}", text);
+        }
+
+        _ => {
+            eprintln!("Unknown command");
+        }
+    }
 }
