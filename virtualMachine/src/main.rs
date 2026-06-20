@@ -111,6 +111,7 @@ fn main() {
         eprintln!("  vm asm <file.tasm>");
         eprintln!("  vm run <file.tbc>");
         eprintln!("  vm dis <file.tbc>");
+        eprintln!(" vm trace <file.tbc>");
         return;
     }
 
@@ -158,7 +159,18 @@ fn main() {
 
             println!("{}", text);
         }
+        "trace" => {
+            let file_bytes = std::fs::read(filename)
+                .expect("Failed to read bytecode file");
 
+            let code = read_program(&file_bytes)
+                .expect("Invalid bytecode file");
+
+            let mut vm = Vm::new();
+
+            vm.run(&code, true)
+                .expect("VM execution failed");
+        }
         _ => {
             eprintln!("Unknown command");
         }
