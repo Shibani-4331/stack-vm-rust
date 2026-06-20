@@ -1,4 +1,6 @@
-use crate::isa::Op;
+// use std::fmt::write;
+
+use crate::isa::{Op, DecodeError};
 
 
 pub struct Vm {
@@ -15,7 +17,6 @@ impl Vm {
             ip: 0,
         }
     }
-
     pub fn push(&mut self, value:i64)->Result<(), VmError>{
         if self.stack.len() >= 1024{
            return Err(VmError::StackOverflow);
@@ -32,7 +33,11 @@ impl Vm {
         let mut halted = false;
         while self.ip < code.len() {
             let current_ip = self.ip;
-            let (op, size) = Op::decode(&code[self.ip..]).unwrap();
+            let (op, size) = Op::decode(&code[self.ip..])
+            .map_err(|e| match e {
+                DecodeError::InvalidOpcode(op) => VmError::InvalidOpcode(op),
+                DecodeError::TruncatedInstruction => VmError::TruncatedInstruction,
+            })?;
             if trace {
                 println!(
                     "ip={} op={:?} stack={:?}",
@@ -129,6 +134,8 @@ pub enum VmError {
     DivisionByZero,
     ModuloByZero,
     MissingHalt,
+    InvalidOpcode(u8),
+    TruncatedInstruction,
 }
 impl std::fmt::Display for VmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -138,6 +145,8 @@ impl std::fmt::Display for VmError {
             VmError::DivisionByZero => write!(f, "division by zero"),
             VmError::ModuloByZero => write!(f, "modulo by zero"),
             VmError::MissingHalt =>write!(f,"program ended without HALT"),
+            VmError::TruncatedInstruction=>write!(f,"truncated instruction"),
+            VmError::InvalidOpcode(op)=>write!(f,"invalid opcode: 0x{:02X}",op),
         }
     }
 }

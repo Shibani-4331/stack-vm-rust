@@ -89,13 +89,13 @@ pub enum Op {
             0x60 => Ok((Op::Print, 1)),
             0xFF => Ok((Op::Halt, 1)),
 
-            _=>todo!()
+            opcode => Err(DecodeError::InvalidOpcode(opcode))
         }
     }
  }
 
 #[derive(Debug)]
 pub enum DecodeError {
-    UnknownOpcode(u8),
+    InvalidOpcode(u8),
     TruncatedInstruction,
 }

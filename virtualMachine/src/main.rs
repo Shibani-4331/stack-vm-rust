@@ -2,13 +2,14 @@ mod isa;
 mod vm;
 mod assembler;
 mod bytecode;
+mod disassembler;
 
-use isa::Op;
-use vm::Vm;
-use bytecode::{write_program, read_program};
+// use isa::Op;
+// use vm::Vm;
+// use bytecode::{write_program, read_program};
 use std::fs;
-
 use crate::assembler::assemble;
+use disassembler::disassemble;
 
 fn main() {
     // let mut bytes = Vec::new();
@@ -91,6 +92,14 @@ fn main() {
 
     let source = fs::read_to_string("program.tasm").unwrap();
     let code = assemble(&source).unwrap();
-    let file_bytes = write_program(&code);
-    fs::write("program.tbc", &file_bytes).unwrap();
+    // let file_bytes = write_program(&code);
+    // fs::write("program.tbc", &file_bytes).unwrap();
+
+    // let file_bytes = fs::read("program.tbc").unwrap();
+    // let code = read_program(&file_bytes).unwrap();
+    // let mut vm = Vm::new();
+    // vm.run(&code, false).unwrap();
+
+    let text = disassemble(&code).unwrap();
+    println!("{}",text);
 }
