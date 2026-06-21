@@ -15,7 +15,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                 Op::Halt.encode(&mut bytes)
             }
             "PUSH" => {
-                if parts.len() < 2 {
+                if parts.len() != 2 {
                     return Err(format!("Line {}: PUSH requires an operand",line_no + 1));
                 }
                 let value: i64 = parts[1]
@@ -26,7 +26,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                 Op::Push(value).encode(&mut bytes);
             }
             "LOAD" => {
-                if parts.len() < 2 {
+                if parts.len() != 2 {
                     return Err(format!("Line {}: LOAD requires an operand",line_no + 1));
                 }
                 let slot: u8 = parts[1].parse()
@@ -34,7 +34,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                 Op::Load(slot).encode(&mut bytes);
             }
             "STORE" => {
-                if parts.len() < 2 {
+                if parts.len() != 2 {
                     return Err(format!("Line {}: STORE requires an operand",line_no + 1));
                 }
                 let slot: u8 = parts[1].parse()

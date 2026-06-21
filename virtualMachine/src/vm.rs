@@ -30,6 +30,7 @@ impl Vm {
     }
 
     pub fn run(&mut self, code: &[u8], trace: bool) -> Result<(), VmError> {
+        self.ip = 0;
         let mut halted = false;
         while self.ip < code.len() {
             let current_ip = self.ip;
