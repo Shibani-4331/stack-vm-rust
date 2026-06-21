@@ -1,8 +1,4 @@
-// use std::fmt::write;
-
 use crate::isa::{Op, DecodeError};
-
-
 pub struct Vm {
     stack : Vec<i64>,
     globals: [i64;256],
@@ -17,16 +13,16 @@ impl Vm {
             ip: 0,
         }
     }
-    pub fn push(&mut self, value:i64)->Result<(), VmError>{
-        if self.stack.len() >= 1024{
-           return Err(VmError::StackOverflow);
+    pub fn push(&mut self, value: i64, ip:usize) -> Result<(), VmError> {
+        if self.stack.len() >= 1024 {
+            return Err(VmError::StackOverflow(ip)); // temporary
         }
         self.stack.push(value);
         Ok(())
     }
 
-    pub fn pop(&mut self)-> Result<i64, VmError>{
-        self.stack.pop().ok_or(VmError::StackUnderflow)
+    pub fn pop(&mut self, ip:usize) -> Result<i64, VmError> {
+        self.stack.pop().ok_or(VmError::StackUnderflow(ip))
     }
 
     pub fn run(&mut self, code: &[u8], trace: bool) -> Result<(), VmError> {
@@ -36,8 +32,8 @@ impl Vm {
             let current_ip = self.ip;
             let (op, size) = Op::decode(&code[self.ip..])
             .map_err(|e| match e {
-                DecodeError::InvalidOpcode(op) => VmError::InvalidOpcode(op),
-                DecodeError::TruncatedInstruction => VmError::TruncatedInstruction,
+                DecodeError::InvalidOpcode(op) => VmError::InvalidOpcode(op, current_ip),
+                DecodeError::TruncatedInstruction => VmError::TruncatedInstruction(current_ip),
             })?;
             if trace {
                 println!(
@@ -50,69 +46,69 @@ impl Vm {
             self.ip += size;
             match op {
                 Op::Push(n) => {
-                    self.push(n)?;
+                    self.push(n,current_ip)?;
                 }
                 Op::Pop => {
-                    self.pop()?;
+                    self.pop(current_ip)?;
                 }
 
                 Op::Add => {
-                    let b = self.pop()?;
-                    let a = self.pop()?;
-                    self.push(a + b)?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    self.push(a + b,current_ip)?;
                 }
                 Op::Sub => {
-                    let b = self.pop()?;
-                    let a = self.pop()?;
-                    self.push(a - b)?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    self.push(a - b,current_ip)?;
                 }
                 Op::Mul => {
-                    let b = self.pop()?;
-                    let a = self.pop()?;
-                    self.push(a*b)?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    self.push(a*b, current_ip)?;
                 }
                 Op::Div => {
-                    let b = self.pop()?;
-                    let a = self.pop()?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
                     if b == 0 {
-                        return Err(VmError::DivisionByZero);
+                        return Err(VmError::DivisionByZero(current_ip));
                     }
-                    self.push(a / b)?;
+                    self.push(a / b, current_ip)?;
                 }
                 Op::Neg => {
-                    let a = self.pop()?;
-                    self.push(-a)?;
+                    let a = self.pop(current_ip)?;
+                    self.push(-a, current_ip)?;
                 }
                 Op::Mod => {
-                    let b = self.pop()?;
-                    let a = self.pop()?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
 
                     if b == 0 {
-                        return Err(VmError::ModuloByZero);
+                        return Err(VmError::ModuloByZero(current_ip));
                     }
-                    self.push(a % b)?;
+                    self.push(a % b, current_ip)?;
                 }
                 Op::Dup => {
-                    let m = *self.stack.last().ok_or(VmError::StackUnderflow)?;
-                    self.push(m)?;
+                    let m = *self.stack.last().ok_or(VmError::StackUnderflow(current_ip))?;
+                    self.push(m,current_ip)?;
                 }
                 Op::Swap =>{
-                    let b = self.pop()?;
-                    let a = self.pop()?;
-                    self.push(b)?;
-                    self.push(a)?;
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    self.push(b,current_ip)?;
+                    self.push(a,current_ip)?;
                 }
                 
                 Op::Store(slot) => {
-                    let value = self.pop()?;
+                    let value = self.pop(current_ip)?;
                     self.globals[slot as usize] = value;
                 }
                 Op::Load(slot) => {
                     let value = self.globals[slot as usize];
-                    self.push(value)?;
+                    self.push(value,current_ip)?;
                 }
                 Op::Print => {
-                    let value = self.pop()?;
+                    let value = self.pop(current_ip)?;
                     println!("{}", value);
                 }
                 Op::Halt => {
@@ -122,7 +118,7 @@ impl Vm {
             }
         }
         if !halted {
-            return Err(VmError::MissingHalt);
+            return Err(VmError::MissingHalt(self.ip));
         }
         Ok(())
     }
@@ -130,24 +126,38 @@ impl Vm {
 
 #[derive(Debug)]
 pub enum VmError {
-    StackUnderflow,
-    StackOverflow,
-    DivisionByZero,
-    ModuloByZero,
-    MissingHalt,
-    InvalidOpcode(u8),
-    TruncatedInstruction,
+    StackUnderflow(usize),
+    StackOverflow(usize),
+    DivisionByZero(usize),
+    ModuloByZero(usize),
+    MissingHalt(usize),
+    InvalidOpcode(u8, usize),
+    TruncatedInstruction(usize),
 }
 impl std::fmt::Display for VmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            VmError::StackUnderflow => write!(f, "stack underflow"),
-            VmError::StackOverflow => write!(f, "stack overflow"),
-            VmError::DivisionByZero => write!(f, "division by zero"),
-            VmError::ModuloByZero => write!(f, "modulo by zero"),
-            VmError::MissingHalt =>write!(f,"program ended without HALT"),
-            VmError::TruncatedInstruction=>write!(f,"truncated instruction"),
-            VmError::InvalidOpcode(op)=>write!(f,"invalid opcode: 0x{:02X}",op),
+            VmError::StackUnderflow(ip) =>
+                write!(f, "trap at ip=0x{:04X}: stack underflow", ip),
+
+            VmError::StackOverflow(ip) =>
+                write!(f, "trap at ip=0x{:04X}: stack overflow", ip),
+
+            VmError::DivisionByZero(ip) =>
+                write!(f, "trap at ip=0x{:04X}: division by zero", ip),
+
+            VmError::ModuloByZero(ip) =>
+                write!(f, "trap at ip=0x{:04X}: modulo by zero", ip),
+
+            VmError::MissingHalt(ip) =>
+                write!(f, "trap at ip=0x{:04X}: program ended without HALT", ip),
+
+            VmError::TruncatedInstruction(ip) =>
+                write!(f, "trap at ip=0x{:04X}: truncated instruction", ip),
+
+            VmError::InvalidOpcode(op, ip) =>
+                write!(f,
+                    "trap at ip=0x{:04X}: invalid opcode 0x{:02X}",ip , op),
         }
     }
 }

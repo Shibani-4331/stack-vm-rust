@@ -1,0 +1,32 @@
+PUSH 9274
+STORE 0
+
+; thousands digit
+LOAD 0
+PUSH 1000
+DIV
+PRINT
+
+; hundreds digit
+LOAD 0
+PUSH 100
+DIV
+PUSH 10
+MOD
+PRINT
+
+; tens digit
+LOAD 0
+PUSH 10
+DIV
+PUSH 10
+MOD
+PRINT
+
+; ones digit
+LOAD 0
+PUSH 10
+MOD
+PRINT
+
+HALT

@@ -1,0 +1,15 @@
+; Convert 100 C to Fahrenheit
+
+PUSH 100
+
+PUSH 9
+MUL
+
+PUSH 5
+DIV
+
+PUSH 32
+ADD
+
+PRINT
+HALT
