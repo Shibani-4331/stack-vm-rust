@@ -14,7 +14,7 @@ fn main() {
 
     if args.len() < 3 {
         eprintln!("Usage:");
-        eprintln!("  vm asm <file.tasm>");
+        eprintln!("  vm asm <file.tasm> -o <file.tbc>");
         eprintln!("  vm run <file.tbc>");
         eprintln!("  vm dis <file.tbc>");
         eprintln!("  vm trace <file.tbc>");
@@ -26,6 +26,13 @@ fn main() {
 
     match command.as_str() {
         "asm" => {
+            if args.len() < 5 || args[3] != "-o" {
+                eprintln!("Usage: vm asm <file.tasm> -o <file.tbc>");
+                return;
+            }
+
+            let output_file = &args[4];
+
             let source = std::fs::read_to_string(filename)
                 .expect("Failed to read source file");
 
@@ -34,7 +41,7 @@ fn main() {
 
             let file_bytes = write_program(&code);
 
-            std::fs::write("program.tbc", file_bytes)
+            std::fs::write(output_file, file_bytes)
                 .expect("Failed to write bytecode file");
 
             println!("Assembled successfully.");
