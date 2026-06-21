@@ -35,7 +35,6 @@ fn main() {
 
             let source = std::fs::read_to_string(filename)
                 .expect("Failed to read source file");
-
             let code = assemble(&source)
                 .expect("Assembly failed");
 
@@ -51,9 +50,13 @@ fn main() {
             let file_bytes = std::fs::read(filename)
                 .expect("Failed to read bytecode file");
 
-            let code = read_program(&file_bytes)
-                .expect("Invalid bytecode file");
-
+            let code = match read_program(&file_bytes) {
+                Ok(code) => code,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    return;
+                }
+            };
             let mut vm = Vm::new();
 
             if let Err(err) = vm.run(&code, false){
@@ -65,9 +68,13 @@ fn main() {
             let file_bytes = std::fs::read(filename)
                 .expect("Failed to read bytecode file");
 
-            let code = read_program(&file_bytes)
-                .expect("Invalid bytecode file");
-
+            let code = match read_program(&file_bytes) {
+                Ok(code) => code,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    return;
+                }
+            };
             let text = disassemble(&code)
                 .expect("Disassembly failed");
 
@@ -77,9 +84,13 @@ fn main() {
             let file_bytes = std::fs::read(filename)
                 .expect("Failed to read bytecode file");
 
-            let code = read_program(&file_bytes)
-                .expect("Invalid bytecode file");
-
+            let code = match read_program(&file_bytes) {
+                Ok(code) => code,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    return;
+                }
+            };
             let mut vm = Vm::new();
 
             if let Err(err) = vm.run(&code, true){
