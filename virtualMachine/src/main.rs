@@ -15,9 +15,8 @@ fn main() {
     if args.len() < 3 {
         eprintln!("Usage:");
         eprintln!("  vm asm <file.tasm> -o <file.tbc>");
-        eprintln!("  vm run <file.tbc>");
+        eprintln!("  vm run [--trace] <file.tbc>");
         eprintln!("  vm dis <file.tbc>");
-        eprintln!("  vm trace <file.tbc>");
         return;
     }
 
@@ -28,51 +27,77 @@ fn main() {
         "asm" => {
             if args.len() < 5 || args[3] != "-o" {
                 eprintln!("Usage: vm asm <file.tasm> -o <file.tbc>");
-                return;
+                std::process::exit(1);
             }
 
             let output_file = &args[4];
 
             let source = std::fs::read_to_string(filename)
-                .expect("Failed to read source file");
+                .unwrap_or_else(|e| { 
+                    eprintln!("Error: {}", e); 
+                    std::process::exit(1); 
+                });
             let code = assemble(&source)
-                .expect("Assembly failed");
+                .unwrap_or_else(|e| { 
+                    eprintln!("{}", e); 
+                    std::process::exit(1); 
+                });
 
             let file_bytes = write_program(&code);
 
             std::fs::write(output_file, file_bytes)
-                .expect("Failed to write bytecode file");
+                .unwrap_or_else(|e| { 
+                    eprintln!("Error: {}", e); 
+                    std::process::exit(1); 
+                });
 
             println!("Assembled successfully.");
         }
 
         "run" => {
-            let file_bytes = std::fs::read(filename)
-                .expect("Failed to read bytecode file");
+            let (trace, file) = if args[2] == "--trace" {
+                if args.len() < 4 {
+                    eprintln!("Usage: vm run [--trace] <file.tbc>");
+                    std::process::exit(1);
+                }
+                (true, &args[3])
+            } else {
+                (false, &args[2])
+            };
+
+            let file_bytes = std::fs::read(file)
+                .unwrap_or_else(|e| { 
+                    eprintln!("Error: {}", e); 
+                    std::process::exit(1); 
+                });
 
             let code = match read_program(&file_bytes) {
                 Ok(code) => code,
                 Err(err) => {
                     eprintln!("Error: {}", err);
-                    return;
+                    std::process::exit(1);
                 }
             };
             let mut vm = Vm::new();
 
-            if let Err(err) = vm.run(&code, false){
-                eprintln!("Error: {}", err)
+            if let Err(err) = vm.run(&code, trace) {
+                eprintln!("{}", err);
+                std::process::exit(1);
             }
         }
 
         "dis" => {
             let file_bytes = std::fs::read(filename)
-                .expect("Failed to read bytecode file");
+                .unwrap_or_else(|e| { 
+                    eprintln!("Error: {}", e); 
+                    std::process::exit(1); 
+                });
 
             let code = match read_program(&file_bytes) {
                 Ok(code) => code,
                 Err(err) => {
                     eprintln!("Error: {}", err);
-                    return;
+                    std::process::exit(1);
                 }
             };
             let text = disassemble(&code)
@@ -80,25 +105,9 @@ fn main() {
 
             println!("{}", text);
         }
-        "trace" => {
-            let file_bytes = std::fs::read(filename)
-                .expect("Failed to read bytecode file");
-
-            let code = match read_program(&file_bytes) {
-                Ok(code) => code,
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    return;
-                }
-            };
-            let mut vm = Vm::new();
-
-            if let Err(err) = vm.run(&code, true){
-                eprintln!("Error: {}", err)
-            }
-        }
         _ => {
             eprintln!("Unknown command");
+            std::process::exit(1);
         }
     }
 }
