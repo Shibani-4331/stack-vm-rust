@@ -99,3 +99,49 @@ pub enum DecodeError {
     InvalidOpcode(u8),
     TruncatedInstruction,
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_decode_push(){
+        let op = Op::Push(42);
+        let mut bytes = Vec::new();
+        op.encode(&mut bytes);
+        let (decoded_op, size) = Op::decode(&bytes).unwrap();
+        assert_eq!(decoded_op, op);
+        assert_eq!(size, 9);
+    }
+
+    #[test]
+    fn all_variants_round_trip() {
+        let ops = vec![
+            Op::Push(0), Op::Push(-1), Op::Push(i64::MAX), Op::Push(i64::MIN),
+            Op::Pop, Op::Dup, Op::Swap,
+            Op::Add, Op::Sub, Op::Mul, Op::Div, Op::Mod, Op::Neg,
+            Op::Load(0), Op::Load(255), Op::Store(0), Op::Store(255),
+            Op::Print, Op::Halt,
+        ];
+        for op in ops {
+            let mut bytes = Vec::new();
+            op.encode(&mut bytes);
+            let (decoded, _) = Op::decode(&bytes).unwrap();
+            assert_eq!(decoded, op);
+        }
+    }
+
+    #[test]
+    fn decode_truncated(){
+        assert!(matches!(Op::decode(&[]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x01]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x40]), Err(DecodeError::TruncatedInstruction)));
+    }
+
+    #[test]
+    fn decode_invalid_opcode() {
+        assert!(matches!(Op::decode(&[0x00]), Err(DecodeError::InvalidOpcode(0x00))));
+        assert!(matches!(Op::decode(&[0x42]), Err(DecodeError::InvalidOpcode(0x42))));
+    }
+}
