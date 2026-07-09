@@ -64,3 +64,94 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
     }
     Ok(bytes)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn assemble_push_halt(){
+        let source = "PUSH 42\nHALT";
+        let bytes = assemble(source).unwrap();
+
+        let mut expected = Vec::new();
+        Op::Push(42).encode(&mut expected);
+        Op::Halt.encode(&mut expected);
+
+        assert_eq!(bytes, expected);
+    }
+
+    #[test]
+    fn assemble_all_instructions() {
+        let source = "\
+        PUSH 10
+        POP
+        DUP
+        SWAP
+        ADD
+        SUB
+        MUL
+        DIV
+        MOD
+        NEG
+        LOAD 0
+        STORE 1
+        PRINT
+        HALT";
+        let bytes = assemble(source).unwrap();
+
+        let mut pc = 0;
+        let expected = vec![
+            Op::Push(10), Op::Pop, Op::Dup, Op::Swap,
+            Op::Add, Op::Sub, Op::Mul, Op::Div, Op::Mod, Op::Neg,
+            Op::Load(0), Op::Store(1),
+            Op::Print, Op::Halt,
+        ];
+        for op in &expected {
+            let (decoded, size) = Op::decode(&bytes[pc..]).unwrap();
+            assert_eq!(&decoded, op);
+            pc += size;
+        }
+        assert_eq!(pc, bytes.len());
+    }
+
+    #[test]
+    fn assemble_comments() {
+        let source = "PUSH 1; this is a comment\nHALT";
+        let bytes = assemble(source).unwrap();
+
+        let mut expected = Vec::new();
+        Op::Push(1).encode(&mut expected);
+        Op::Halt.encode(&mut expected);
+        assert_eq!(bytes, expected);
+    }
+
+    #[test]
+    fn assemble_case_insensitivity() {
+        let lower = assemble("push 10\nhalt\n").unwrap();
+        let upper = assemble("PUSH 10\nHALT\n").unwrap();
+        assert_eq!(lower, upper);
+    }
+
+    #[test]
+    fn assemble_missing_halt(){
+        let result = assemble("PUSH 1");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn assemble_invalid_instruction() {
+        let result = assemble("FOO\nHALT").unwrap_err();
+        assert!(result.contains("unknown instruction"));
+        assert!(result.contains("FOO"));
+    }
+
+    #[test]
+    fn assemble_invalid_operand() {
+        let err1 = assemble("PUSH abc\nHALT\n").unwrap_err();
+        assert!(err1.contains("invalid number"));
+
+        let err2 = assemble("LOAD xyz\nHALT\n").unwrap_err();
+        assert!(err2.contains("invalid number"));
+    }
+}
