@@ -41,3 +41,47 @@ pub fn read_program(bytes: &[u8])-> Result<Vec<u8>,String>{
 
     Ok(bytes[9..].to_vec())
 }
+
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn write_read_roundtrip(){
+        let code = vec![0x01, 0x2A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF];
+        let bytes = write_program(&code);
+        let decoded = read_program(&bytes).unwrap();
+        assert_eq!(code, decoded);  
+    }
+
+    #[test]
+    fn read_too_short(){
+        let err = read_program(&[0; 8]).unwrap_err();
+        assert_eq!(err, "file too short");
+    }
+
+    #[test]
+    fn read_bad_magic(){
+        let mut bytes = vec![0; 9];
+        bytes[0] = 0x41;
+        let err = read_program(&bytes).unwrap_err();
+        assert_eq!(err, "invalid magic");
+    }
+
+    #[test]
+    fn read_bad_version(){
+        let bytes = vec![0x4D, 0x56, 0x4D, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00];
+        let err = read_program(&bytes).unwrap_err();
+        assert_eq!(err, "unsupported version");
+    }
+
+    #[test]
+    fn read_length_mismatch(){
+        let mut bytes = vec![0x4D, 0x56, 0x4D, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00];
+        bytes.extend_from_slice(&[0xFF; 10]); 
+        let err = read_program(&bytes).unwrap_err();
+        assert_eq!(err, "length mismatch");
+    }
+
+}
