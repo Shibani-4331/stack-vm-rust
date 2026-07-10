@@ -161,3 +161,126 @@ impl std::fmt::Display for VmError {
         }
     }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    //helper fn, so we don't have to repeat encode+run pattern each time
+    fn run_ops(ops: &[Op]) -> Result<Vec<i64>, VmError> {
+        let mut code = Vec::new();
+        for op in ops {
+            op.encode(&mut code);
+        }
+        let mut vm = Vm::new();
+        vm.run(&code, false)?;
+        Ok(vm.stack)
+    }
+    #[test]
+    fn test_push_pop() {
+        let mut vm = Vm::new();
+        vm.push(42,0).unwrap();
+        assert_eq!(vm.pop(0).unwrap(), 42);
+    }
+
+    #[test]
+    fn add(){
+        let stack = run_ops(&[Op::Push(2), Op::Push(3), Op::Add, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![5]);
+    }
+
+    #[test]
+    fn sub(){
+        let stack = run_ops(&[Op::Push(5), Op::Push(3), Op::Sub, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![2]);
+    }
+
+    #[test]
+    fn mul(){
+        let stack = run_ops(&[Op::Push(5), Op::Push(3), Op::Mul, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![15]);
+    }
+
+    #[test]
+    fn div(){
+        let stack = run_ops(&[Op::Push(6), Op::Push(3), Op::Div, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![2]);
+    }
+
+    #[test]
+    //finding modulo and negating the result
+    fn mod_neg(){
+        let stack = run_ops(&[Op::Push(20), Op::Push(14), Op::Mod, Op::Neg, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![-6]);
+    }
+
+    #[test]
+    fn dup(){
+        let stack = run_ops(&[Op::Push(5), Op::Dup, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![5,5]);
+    }
+
+    #[test]
+    fn swap(){
+        let stack = run_ops(&[Op::Push(3), Op::Push(5), Op::Swap, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![5,3]);
+    }
+
+    #[test]
+    fn globals(){
+        let stack = run_ops(&[Op::Push(42), Op::Store(0), Op::Load(0), Op::Halt]).unwrap();
+        assert_eq!(stack, vec![42]);
+    }
+    #[test]
+    fn stack_underflow() {
+        let mut code = Vec::new();
+        Op::Pop.encode(&mut code);
+        Op::Halt.encode(&mut code);
+        let mut vm = Vm::new();
+        let err = vm.run(&code, false).unwrap_err();
+        assert!(matches!(err, VmError::StackUnderflow(0)));
+    }
+
+    #[test]
+    fn stack_overflow() {
+        let mut code = Vec::new();
+        for _ in 0..1025 {
+            Op::Push(1).encode(&mut code);
+        }
+        Op::Halt.encode(&mut code);
+        let mut vm = Vm::new();
+        let err = vm.run(&code, false).unwrap_err();
+        assert!(matches!(err, VmError::StackOverflow(9216)));
+    }
+
+    #[test]
+    fn div_by_zero() {
+        let stack = run_ops(&[Op::Push(10), Op::Push(0), Op::Div, Op::Halt]);
+        assert!(matches!(stack, Err(VmError::DivisionByZero(18))));
+    }
+
+    #[test]
+    fn mod_by_zero() {
+        let stack = run_ops(&[Op::Push(10), Op::Push(0), Op::Mod, Op::Halt]);
+        assert!(matches!(stack, Err(VmError::ModuloByZero(18))));
+    }
+
+    #[test]
+    fn missing_halt() {
+        let mut code = Vec::new();
+        Op::Push(42).encode(&mut code);
+        let mut vm = Vm::new();
+        let err = vm.run(&code, false).unwrap_err();
+        assert!(matches!(err, VmError::MissingHalt(9)));
+    }
+
+    #[test]
+    fn invalid_opcode() {
+        let mut vm = Vm::new();
+        let err = vm.run(&[0x00], false).unwrap_err();
+        assert!(matches!(err, VmError::InvalidOpcode(0x00, 0)));
+    }
+
+}
