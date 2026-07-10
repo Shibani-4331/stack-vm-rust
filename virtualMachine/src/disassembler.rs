@@ -58,3 +58,42 @@ pub fn disassemble(code: &[u8])->Result<String, DecodeError> {
     }
     Ok(output)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disassemble_empty(){
+        let text = disassemble(&[]).unwrap();
+        assert_eq!(text, ""); 
+    }
+
+    #[test]
+    fn disassemble_instructions(){
+        let mut code = Vec::new();
+        Op::Push(42).encode(&mut code);
+        Op::Pop.encode(&mut code);
+        Op::Dup.encode(&mut code);
+        Op::Swap.encode(&mut code);
+        Op::Add.encode(&mut code);
+        Op::Sub.encode(&mut code);
+        Op::Mul.encode(&mut code);
+        Op::Div.encode(&mut code);
+        Op::Mod.encode(&mut code);
+        Op::Neg.encode(&mut code);
+        Op::Load(0).encode(&mut code);
+        Op::Store(1).encode(&mut code);
+        Op::Print.encode(&mut code);
+        Op::Halt.encode(&mut code);
+        let text = disassemble(&code).unwrap();
+        let expected ="PUSH 42\nPOP\nDUP\nSWAP\nADD\nSUB\nMUL\nDIV\nMOD\nNEG\nLOAD 0\nSTORE 1\nPRINT\nHALT\n";
+        assert_eq!(text,expected);
+    }
+
+    #[test]
+    fn disassemble_invalid() {
+        assert!(disassemble(&[0x00]).is_err());
+        assert!(disassemble(&[0x42]).is_err());
+    }
+}
