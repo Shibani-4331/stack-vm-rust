@@ -14,6 +14,9 @@ pub enum Op {
     Store(u8),
     Print,
     Halt,
+    Eq,
+    Lt,
+    Gt,
 }
  impl Op{
     pub fn encode(&self, out:&mut Vec<u8>){
@@ -41,6 +44,9 @@ pub enum Op {
             }
             Op::Print => out.push(0x60),
             Op::Halt => out.push(0xFF),
+            Op::Eq => out.push(0x20),
+            Op::Lt => out.push(0x21),
+            Op::Gt => out.push(0x22),
         }
     }
 
@@ -88,7 +94,10 @@ pub enum Op {
             }
             0x60 => Ok((Op::Print, 1)),
             0xFF => Ok((Op::Halt, 1)),
-
+            
+            0x20 => Ok((Op::Eq, 1)),
+            0x21 => Ok((Op::Lt, 1)),
+            0x22 => Ok((Op::Gt, 1)),
             opcode => Err(DecodeError::InvalidOpcode(opcode))
         }
     }
@@ -122,7 +131,7 @@ mod tests {
             Op::Pop, Op::Dup, Op::Swap,
             Op::Add, Op::Sub, Op::Mul, Op::Div, Op::Mod, Op::Neg,
             Op::Load(0), Op::Load(255), Op::Store(0), Op::Store(255),
-            Op::Print, Op::Halt,
+            Op::Print, Op::Halt,Op::Eq, Op::Lt, Op::Gt,
         ];
         for op in ops {
             let mut bytes = Vec::new();

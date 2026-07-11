@@ -53,6 +53,16 @@ pub fn disassemble(code: &[u8])->Result<String, DecodeError> {
             Op::Halt => {
                 output.push_str("HALT\n");
             }
+
+            Op::Eq => {
+                output.push_str("EQ\n");
+            }
+            Op::Lt => {
+                output.push_str("LT\n");
+            }
+            Op::Gt => {
+                output.push_str("GT\n");
+            }
         }
         pc+=size;
     }
@@ -85,9 +95,12 @@ mod tests {
         Op::Load(0).encode(&mut code);
         Op::Store(1).encode(&mut code);
         Op::Print.encode(&mut code);
+        Op::Eq.encode(&mut code);
+        Op::Lt.encode(&mut code);
+        Op::Gt.encode(&mut code);
         Op::Halt.encode(&mut code);
         let text = disassemble(&code).unwrap();
-        let expected ="PUSH 42\nPOP\nDUP\nSWAP\nADD\nSUB\nMUL\nDIV\nMOD\nNEG\nLOAD 0\nSTORE 1\nPRINT\nHALT\n";
+        let expected ="PUSH 42\nPOP\nDUP\nSWAP\nADD\nSUB\nMUL\nDIV\nMOD\nNEG\nLOAD 0\nSTORE 1\nPRINT\nEQ\nLT\nGT\nHALT\n";
         assert_eq!(text,expected);
     }
 

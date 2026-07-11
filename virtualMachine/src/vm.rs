@@ -115,6 +115,25 @@ impl Vm {
                     halted=true;
                     break;
                 }
+
+                Op::Eq => {
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    let c = if a == b { 1 } else { 0 };
+                    self.push(c, current_ip)?;
+                }
+                Op::Lt => {
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    let c = if a < b { 1 } else { 0 };
+                    self.push(c, current_ip)?;
+                }
+                Op::Gt => {
+                    let b = self.pop(current_ip)?;
+                    let a = self.pop(current_ip)?;
+                    let c = if a > b { 1 } else { 0 };
+                    self.push(c, current_ip)?;
+                }
             }
         }
         if !halted {
@@ -283,4 +302,39 @@ mod tests {
         assert!(matches!(err, VmError::InvalidOpcode(0x00, 0)));
     }
 
+    #[test]
+    fn eq_true() {
+        let stack = run_ops(&[Op::Push(5), Op::Push(5), Op::Eq, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![1]);
+    }
+
+    #[test]
+    fn eq_false() {
+        let stack = run_ops(&[Op::Push(5), Op::Push(3), Op::Eq, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![0]);
+    }
+
+    #[test]
+    fn lt_true() {
+        let stack = run_ops(&[Op::Push(3), Op::Push(5), Op::Lt, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![1]);
+    }
+
+    #[test]
+    fn lt_false() {
+        let stack = run_ops(&[Op::Push(5), Op::Push(3), Op::Lt, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![0]);
+    }
+
+    #[test]
+    fn gt_true() {
+        let stack = run_ops(&[Op::Push(5), Op::Push(3), Op::Gt, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![1]);
+    }
+
+    #[test]
+    fn gt_false() {
+        let stack = run_ops(&[Op::Push(3), Op::Push(5), Op::Gt, Op::Halt]).unwrap();
+        assert_eq!(stack, vec![0]);
+    }
 }

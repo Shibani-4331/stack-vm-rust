@@ -55,9 +55,13 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
             "SWAP" => Op::Swap.encode(&mut bytes),
 
             "PRINT" => Op::Print.encode(&mut bytes),
+            "EQ" => Op::Eq.encode(&mut bytes),
+            "LT" => Op::Lt.encode(&mut bytes),
+            "GT" => Op::Gt.encode(&mut bytes),
             _ => {
                 return Err(format!("Line {}: unknown instruction '{}'",line_no + 1,parts[0]));
             }
+
         }
     }
     if !saw_halt {
@@ -98,6 +102,9 @@ mod tests {
         LOAD 0
         STORE 1
         PRINT
+        EQ
+        LT
+        GT
         HALT";
         let bytes = assemble(source).unwrap();
 
@@ -106,7 +113,7 @@ mod tests {
             Op::Push(10), Op::Pop, Op::Dup, Op::Swap,
             Op::Add, Op::Sub, Op::Mul, Op::Div, Op::Mod, Op::Neg,
             Op::Load(0), Op::Store(1),
-            Op::Print, Op::Halt,
+            Op::Print, Op::Eq, Op::Lt, Op::Gt, Op::Halt,
         ];
         for op in &expected {
             let (decoded, size) = Op::decode(&bytes[pc..]).unwrap();
