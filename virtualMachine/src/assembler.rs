@@ -1,6 +1,7 @@
 use crate::isa::Op;
 
 pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
+    let source = source.trim_start_matches('\u{FEFF}');
     let mut bytes = Vec::new();
     let mut saw_halt = false;
     for (line_no, line) in source.lines().enumerate() {
@@ -153,5 +154,13 @@ mod tests {
 
         let err2 = assemble("LOAD xyz\nHALT\n").unwrap_err();
         assert!(err2.contains("invalid number"));
+    }
+
+    #[test]
+    fn assemble_bom_stripped() {
+        let source = "\u{FEFF}PUSH 10\nHALT";
+        let bytes = assemble(source).unwrap();  // should not error
+        let expected = assemble("PUSH 10\nHALT").unwrap();
+        assert_eq!(bytes, expected);
     }
 }
