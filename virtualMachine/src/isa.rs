@@ -17,6 +17,9 @@ pub enum Op {
     Eq,
     Lt,
     Gt,
+    Jmp(u32),
+    Jz(u32),
+    Jnz(u32),
 }
  impl Op{
     pub fn encode(&self, out:&mut Vec<u8>){
@@ -47,6 +50,18 @@ pub enum Op {
             Op::Eq => out.push(0x20),
             Op::Lt => out.push(0x21),
             Op::Gt => out.push(0x22),
+            Op::Jmp(addr) => {
+                out.push(0x30);
+                out.extend_from_slice(&addr.to_le_bytes());
+            }
+            Op::Jz(addr) => {
+                out.push(0x31);
+                out.extend_from_slice(&addr.to_le_bytes());
+            }
+            Op::Jnz(addr) => {
+                out.push(0x32);
+                out.extend_from_slice(&addr.to_le_bytes());
+            }
         }
     }
 
@@ -98,6 +113,28 @@ pub enum Op {
             0x20 => Ok((Op::Eq, 1)),
             0x21 => Ok((Op::Lt, 1)),
             0x22 => Ok((Op::Gt, 1)),
+
+            0x30 => {
+                if bytes.len() < 5 {
+                    return Err(DecodeError::TruncatedInstruction);
+                }
+                let addr = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
+                Ok((Op::Jmp(addr), 5))
+            }
+            0x31 => {
+                if bytes.len() < 5 {
+                    return Err(DecodeError::TruncatedInstruction);
+                }
+                let addr = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
+                Ok((Op::Jz(addr), 5))
+            }
+            0x32 => {
+                if bytes.len() < 5 {
+                    return Err(DecodeError::TruncatedInstruction);
+                }
+                let addr = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
+                Ok((Op::Jnz(addr), 5))
+            }
             opcode => Err(DecodeError::InvalidOpcode(opcode))
         }
     }
@@ -132,6 +169,7 @@ mod tests {
             Op::Add, Op::Sub, Op::Mul, Op::Div, Op::Mod, Op::Neg,
             Op::Load(0), Op::Load(255), Op::Store(0), Op::Store(255),
             Op::Print, Op::Halt,Op::Eq, Op::Lt, Op::Gt,
+            Op::Jmp(0), Op::Jmp(u32::MAX), Op::Jz(0), Op::Jz(255), Op::Jnz(0xDEADBEEF),
         ];
         for op in ops {
             let mut bytes = Vec::new();
@@ -146,6 +184,9 @@ mod tests {
         assert!(matches!(Op::decode(&[]), Err(DecodeError::TruncatedInstruction)));
         assert!(matches!(Op::decode(&[0x01]), Err(DecodeError::TruncatedInstruction)));
         assert!(matches!(Op::decode(&[0x40]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x30]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x31]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x32]), Err(DecodeError::TruncatedInstruction)));
     }
 
     #[test]

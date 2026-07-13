@@ -111,10 +111,6 @@ impl Vm {
                     let value = self.pop(current_ip)?;
                     println!("{}", value);
                 }
-                Op::Halt => {
-                    halted=true;
-                    break;
-                }
 
                 Op::Eq => {
                     let b = self.pop(current_ip)?;
@@ -133,6 +129,27 @@ impl Vm {
                     let a = self.pop(current_ip)?;
                     let c = if a > b { 1 } else { 0 };
                     self.push(c, current_ip)?;
+                }
+
+                Op::Jmp(addr)=>{
+                    self.ip = addr as usize;
+                }
+                Op::Jz(addr) => {
+                    let value = self.pop(current_ip)?;
+                    if value == 0 {
+                        self.ip = addr as usize;
+                    }
+                }
+                Op::Jnz(addr)=>{
+                    let value = self.pop(current_ip)?;
+                    if value != 0 {
+                        self.ip = addr as usize;
+                    }
+                }
+
+                Op::Halt => {
+                    halted=true;
+                    break;
                 }
             }
         }
@@ -336,5 +353,36 @@ mod tests {
     fn gt_false() {
         let stack = run_ops(&[Op::Push(3), Op::Push(5), Op::Gt, Op::Halt]).unwrap();
         assert_eq!(stack, vec![0]);
+    }
+
+    #[test]
+    fn jmp() {
+        // PUSH 10, JMP 23 (skip PUSH 99), PUSH 20, HALT
+        let stack = run_ops(&[Op::Push(10), Op::Jmp(23), Op::Push(99), Op::Push(20), Op::Halt,]).unwrap();
+        assert_eq!(stack, vec![10, 20]);
+    }
+
+    #[test]
+    fn jz_taken() {
+        let stack = run_ops(&[Op::Push(0), Op::Jz(23), Op::Push(99), Op::Push(20), Op::Halt]).unwrap();
+        assert_eq!(stack, vec![20]);
+    }
+
+    #[test]
+    fn jz_not_taken() {
+        let stack = run_ops(&[Op::Push(1), Op::Jz(23), Op::Push(99), Op::Halt,]).unwrap();
+        assert_eq!(stack, vec![99]);
+    }
+
+    #[test]
+    fn jnz_taken() {
+        let stack = run_ops(&[Op::Push(1), Op::Jnz(23), Op::Push(99), Op::Push(20), Op::Halt,]).unwrap();
+        assert_eq!(stack, vec![20]);
+    }
+
+    #[test]
+    fn jnz_not_taken() {
+        let stack = run_ops(&[Op::Push(0), Op::Jnz(23), Op::Push(99), Op::Halt,]).unwrap();
+        assert_eq!(stack, vec![99]);
     }
 }
