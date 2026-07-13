@@ -1,0 +1,20 @@
+    PUSH 100
+    STORE 0         ; counter = 100
+    PUSH 0
+    STORE 1         ; sum = 0
+loop:
+    LOAD 0
+    JZ done
+    LOAD 1
+    LOAD 0
+    ADD
+    STORE 1         ; sum += counter
+    LOAD 0
+    PUSH 1
+    SUB
+    STORE 0         ; counter--
+    JMP loop
+done:
+    LOAD 1
+    PRINT
+    HALT
