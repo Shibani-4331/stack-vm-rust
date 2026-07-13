@@ -1,4 +1,5 @@
 use crate::isa::{Op, DecodeError};
+use std::io::Write;
 pub struct Vm {
     stack : Vec<i64>,
     globals: [i64;256],
@@ -25,7 +26,7 @@ impl Vm {
         self.stack.pop().ok_or(VmError::StackUnderflow(ip))
     }
 
-    pub fn run(&mut self, code: &[u8], trace: bool) -> Result<(), VmError> {
+    pub fn run(&mut self, code: &[u8], trace: bool, step: bool) -> Result<(), VmError>  {
         self.ip = 0;
         let mut halted = false;
         while self.ip < code.len() {
@@ -152,6 +153,12 @@ impl Vm {
                     break;
                 }
             }
+            if step {
+                print!("— press Enter → ");
+                std::io::stdout().flush().unwrap();
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+            }
         }
         if !halted {
             return Err(VmError::MissingHalt(self.ip));
@@ -211,7 +218,7 @@ mod tests {
             op.encode(&mut code);
         }
         let mut vm = Vm::new();
-        vm.run(&code, false)?;
+        vm.run(&code, false, false)?;
         Ok(vm.stack)
     }
     #[test]
@@ -275,7 +282,7 @@ mod tests {
         Op::Pop.encode(&mut code);
         Op::Halt.encode(&mut code);
         let mut vm = Vm::new();
-        let err = vm.run(&code, false).unwrap_err();
+        let err = vm.run(&code, false, false).unwrap_err();
         assert!(matches!(err, VmError::StackUnderflow(0)));
     }
 
@@ -287,7 +294,7 @@ mod tests {
         }
         Op::Halt.encode(&mut code);
         let mut vm = Vm::new();
-        let err = vm.run(&code, false).unwrap_err();
+        let err = vm.run(&code, false, false).unwrap_err();
         assert!(matches!(err, VmError::StackOverflow(9216)));
     }
 
@@ -308,14 +315,14 @@ mod tests {
         let mut code = Vec::new();
         Op::Push(42).encode(&mut code);
         let mut vm = Vm::new();
-        let err = vm.run(&code, false).unwrap_err();
+        let err = vm.run(&code, false, false).unwrap_err();
         assert!(matches!(err, VmError::MissingHalt(9)));
     }
 
     #[test]
     fn invalid_opcode() {
         let mut vm = Vm::new();
-        let err = vm.run(&[0x00], false).unwrap_err();
+        let err = vm.run(&[0x00], false, false).unwrap_err();
         assert!(matches!(err, VmError::InvalidOpcode(0x00, 0)));
     }
 

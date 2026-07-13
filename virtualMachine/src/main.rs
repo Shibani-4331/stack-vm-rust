@@ -15,7 +15,7 @@ fn main() {
     if args.len() < 3 {
         eprintln!("Usage:");
         eprintln!("  vm asm <file.tasm> -o <file.tbc>");
-        eprintln!("  vm run [--trace] <file.tbc>");
+        eprintln!("  vm run [--trace] [--step] <file.tbc>");
         eprintln!("  vm dis <file.tbc>");
         return;
     }
@@ -55,15 +55,25 @@ fn main() {
         }
 
         "run" => {
-            let (trace, file) = if args[2] == "--trace" {
-                if args.len() < 4 {
-                    eprintln!("Usage: vm run [--trace] <file.tbc>");
-                    std::process::exit(1);
+            let mut trace = false;
+            let mut step = false;
+            let mut file_idx = 2;
+            while file_idx < args.len() && args[file_idx].starts_with("--") {
+                match args[file_idx].as_str() {
+                    "--trace" => trace = true,
+                    "--step" => step = true,
+                    _ => { eprintln!("Unknown flag '{}'", args[file_idx]); std::process::exit(1); }
                 }
-                (true, &args[3])
-            } else {
-                (false, &args[2])
-            };
+                file_idx += 1;
+            }
+            if step && !trace {
+                trace = true;
+            }
+            if file_idx >= args.len() {
+                eprintln!("Usage: vm run [--trace] [--step] <file.tbc>");
+                std::process::exit(1);
+            }
+            let file = &args[file_idx];
 
             let file_bytes = std::fs::read(file)
                 .unwrap_or_else(|e| { 
@@ -80,7 +90,7 @@ fn main() {
             };
             let mut vm = Vm::new();
 
-            if let Err(err) = vm.run(&code, trace) {
+            if let Err(err) = vm.run(&code, trace, step) {
                 eprintln!("{}", err);
                 std::process::exit(1);
             }
