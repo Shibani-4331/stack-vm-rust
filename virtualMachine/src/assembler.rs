@@ -235,14 +235,38 @@ mod tests {
             PRINT
             HALT";
         let bytes = assemble(source).unwrap();
-        // decode and verify JMP loop goes to 22, JZ done goes to 61
         let mut pc = 0;
-        let (op1, s1) = Op::decode(&bytes[pc..]).unwrap();
-        assert_eq!(op1, Op::Push(100));
-        pc += s1;
-        let (op2, s2) = Op::decode(&bytes[pc..]).unwrap();
-        assert_eq!(op2, Op::Store(0));
-        pc += s2;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Push(100));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Store(0));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Load(0));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Jz(35));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Push(1));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Sub);
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Store(0));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Jmp(11));
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Print);
+        pc += sz;
+        let (op, sz) = Op::decode(&bytes[pc..]).unwrap();
+        assert_eq!(op, Op::Halt);
+        pc += sz;
+        assert_eq!(pc, bytes.len());
     }
 
     #[test]
