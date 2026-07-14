@@ -143,7 +143,6 @@ virtualMachine/
     ├── div_zero.tasm
     ├── missing_halt.tasm
     ├── mod_zero.tasm
-    ├── program.tasm
     ├── stack_overflow.tasm
     └── stack_underflow.tasm
 ```
