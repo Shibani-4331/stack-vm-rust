@@ -141,10 +141,11 @@ virtualMachine/
 │   └── max3.tasm
 └── traps/
     ├── div_zero.tasm
+    ├── missing_halt.tasm
     ├── mod_zero.tasm
-    ├── stack_underflow.tasm
+    ├── program.tasm
     ├── stack_overflow.tasm
-    └── missing_halt.tasm
+    └── stack_underflow.tasm
 ```
 
 ## Design Decisions
