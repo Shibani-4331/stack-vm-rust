@@ -1,0 +1,32 @@
+; Find max of 17, 42, 8
+    PUSH 17
+    STORE 0          ; a = 17
+    PUSH 42
+    STORE 1          ; b = 42
+    PUSH 8
+    STORE 2          ; c = 8
+
+    LOAD 0
+    LOAD 1
+    GT               ; a > b ?
+    JZ check_bc      ; if a <= b, check b vs c
+    LOAD 0
+    LOAD 2
+    GT               ; a > c ?
+    JZ print_c
+    LOAD 0
+    JMP print
+
+check_bc:
+    LOAD 1
+    LOAD 2
+    GT               ; b > c ?
+    JZ print_c
+    LOAD 1
+    JMP print
+
+print_c:
+    LOAD 2
+print:
+    PRINT
+    HALT

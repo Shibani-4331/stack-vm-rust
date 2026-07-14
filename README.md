@@ -92,6 +92,9 @@ Example `.tasm` files are in `examples/`. See the translation table below for ea
 | `12² + 35²` | `PUSH 12, STORE 0, PUSH 35, STORE 1, LOAD 0, LOAD 0, MUL, LOAD 1, LOAD 1, MUL, ADD` | 1369 |
 | digits of 9274 | `PUSH 9274, STORE 0, LOAD 0, PUSH 1000, DIV, PRINT, ...` | 9 2 7 4 |
 | `∑₁₀₀` | `PUSH 100, STORE 0, ..., LOOP: LOAD 0, JZ DONE, ... JMP LOOP, DONE: ...` | 5050 |
+| 5! | `PUSH 5, STORE 0, PUSH 1, STORE 1, LOOP: ..., JMP LOOP, DONE: LOAD 1, PRINT` | 120 |
+| gcd(56, 98) | `PUSH 56, STORE 0, PUSH 98, STORE 1, LOOP: ..., JZ DONE, ..., JMP LOOP, DONE: ...` | 14 |
+| max(17, 42, 8) | `PUSH 17, STORE 0, PUSH 42, STORE 1, PUSH 8, STORE 2, ..., GT, JZ, ...` | 42 |
 
 ## Trap Handling
 
@@ -132,7 +135,10 @@ virtualMachine/
 │   ├── celsius.tasm
 │   ├── stackplay.tasm
 │   ├── digits.tasm
-│   └── sum.tasm
+│   ├── sum.tasm
+│   ├── factorial.tasm
+│   ├── gcd.tasm
+│   └── max3.tasm
 └── traps/
     ├── div_zero.tasm
     ├── mod_zero.tasm

@@ -1,0 +1,21 @@
+; gcd(56, 98) = 14
+    PUSH 56
+    STORE 0          ; a = 56
+    PUSH 98
+    STORE 1          ; b = 98
+loop:
+    LOAD 1
+    JZ done          ; if b == 0, done
+    LOAD 0
+    LOAD 1
+    MOD
+    STORE 2          ; temp = a % b
+    LOAD 1
+    STORE 0          ; a = b
+    LOAD 2
+    STORE 1          ; b = temp
+    JMP loop
+done:
+    LOAD 0
+    PRINT
+    HALT
