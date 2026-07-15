@@ -95,6 +95,9 @@ Example `.tasm` files are in `examples/`. See the translation table below for ea
 | 5! | `PUSH 5, STORE 0, PUSH 1, STORE 1, LOOP: ..., JMP LOOP, DONE: LOAD 1, PRINT` | 120 |
 | gcd(56, 98) | `PUSH 56, STORE 0, PUSH 98, STORE 1, LOOP: ..., JZ DONE, ..., JMP LOOP, DONE: ...` | 14 |
 | max(17, 42, 8) | `PUSH 17, STORE 0, PUSH 42, STORE 1, PUSH 8, STORE 2, ..., GT, JZ, ...` | 42 |
+| F(20) | `PUSH 20, STORE 0, PUSH 0, STORE 1, PUSH 1, STORE 2, LOOP: ..., JMP LOOP, DONE: LOAD 1, PRINT` | 6765 |
+| 2¹⁰ | `PUSH 2, STORE 0, PUSH 10, STORE 1, PUSH 1, STORE 2, LOOP: ..., JMP LOOP, DONE: LOAD 2, PRINT` | 1024 |
+| is 97 prime? | `PUSH 97, STORE 0, PUSH 2, STORE 1, LOOP: ..., GT, JZ, MOD, JZ, ..., JMP LOOP` | 1 |
 
 ## Trap Handling
 
@@ -131,14 +134,17 @@ virtualMachine/
 │   └── disassembler.rs  # bytecode → .tasm text
 ├── examples/
 │   ├── arithmetic.tasm
-│   ├── horner.tasm
 │   ├── celsius.tasm
-│   ├── stackplay.tasm
 │   ├── digits.tasm
-│   ├── sum.tasm
 │   ├── factorial.tasm
+│   ├── fibonacci.tasm
 │   ├── gcd.tasm
-│   └── max3.tasm
+│   ├── horner.tasm
+│   ├── max3.tasm
+│   ├── power.tasm
+│   ├── prime.tasm
+│   ├── stackplay.tasm
+│   └── sum.tasm
 └── traps/
     ├── div_zero.tasm
     ├── missing_halt.tasm

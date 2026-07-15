@@ -1,0 +1,23 @@
+; Compute 2^10 = 1024
+    PUSH 2
+    STORE 0          ; base = 2
+    PUSH 10
+    STORE 1          ; exp = 10
+    PUSH 1
+    STORE 2          ; result = 1
+loop:
+    LOAD 1
+    JZ done
+    LOAD 2
+    LOAD 0
+    MUL
+    STORE 2          ; result *= base
+    LOAD 1
+    PUSH 1
+    SUB
+    STORE 1          ; exp--
+    JMP loop
+done:
+    LOAD 2
+    PRINT
+    HALT

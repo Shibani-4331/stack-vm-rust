@@ -1,0 +1,27 @@
+; Compute F(20) = 6765
+    PUSH 20
+    STORE 0          ; counter = 20
+    PUSH 0
+    STORE 1          ; a = F(0) = 0
+    PUSH 1
+    STORE 2          ; b = F(1) = 1
+loop:
+    LOAD 0
+    JZ done
+    LOAD 1
+    LOAD 2
+    ADD
+    STORE 3          ; temp = a + b
+    LOAD 2
+    STORE 1          ; a = b
+    LOAD 3
+    STORE 2          ; b = temp
+    LOAD 0
+    PUSH 1
+    SUB
+    STORE 0          ; counter--
+    JMP loop
+done:
+    LOAD 1
+    PRINT
+    HALT

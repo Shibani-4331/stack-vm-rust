@@ -1,0 +1,27 @@
+; Check if 97 is prime (prints 1 if prime, 0 if not)
+    PUSH 97
+    STORE 0          ; n = 97
+    PUSH 2
+    STORE 1          ; divisor = 2
+loop:
+    LOAD 0
+    LOAD 1
+    GT               ; n > divisor?
+    JZ is_prime      ; exhausted all proper divisors — prime
+    LOAD 0
+    LOAD 1
+    MOD
+    JZ not_prime     ; divisible — not prime
+    LOAD 1
+    PUSH 1
+    ADD
+    STORE 1          ; divisor++
+    JMP loop
+is_prime:
+    PUSH 1
+    PRINT
+    HALT
+not_prime:
+    PUSH 0
+    PRINT
+    HALT
