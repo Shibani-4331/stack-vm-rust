@@ -2,6 +2,7 @@ use crate::isa::{Op, DecodeError};
 use std::io::Write;
 pub struct Vm {
     stack : Vec<i64>,
+    ret_stack: Vec<usize>,     
     globals: [i64;256],
     ip: usize,
 }
@@ -10,7 +11,8 @@ impl Vm {
     pub fn new() -> Self {
         Self {
             stack: Vec::new(),
-            globals: [0; 256], // globals are zero-initialized
+            ret_stack: Vec::new(),   
+            globals: [0; 256],
             ip: 0,
         }
     }
@@ -146,6 +148,15 @@ impl Vm {
                     if value != 0 {
                         self.ip = addr as usize;
                     }
+                }
+
+                Op::Call(addr) => {
+                    self.ret_stack.push(self.ip);
+                    self.ip = addr as usize;
+                }
+                Op::Ret => {
+                    self.ip = self.ret_stack.pop()
+                        .ok_or(VmError::StackUnderflow(current_ip))?;
                 }
 
                 Op::Halt => {
@@ -391,5 +402,56 @@ mod tests {
     fn jnz_not_taken() {
         let stack = run_ops(&[Op::Push(0), Op::Jnz(23), Op::Push(99), Op::Halt,]).unwrap();
         assert_eq!(stack, vec![99]);
+    }
+
+    #[test]
+    fn call_ret_push() {
+        let stack = run_ops(&[
+            Op::Call(6),    // subroutine at byte 6
+            Op::Halt,
+            Op::Push(42),
+            Op::Ret,
+        ]).unwrap();
+        assert_eq!(stack, vec![42]);
+    }
+
+     #[test]
+    fn call_ret_add() {
+        let stack = run_ops(&[
+            Op::Push(10),
+            Op::Push(20),
+            Op::Call(24),   // subroutine at byte 24
+            Op::Halt,
+            Op::Add,
+            Op::Ret,
+        ]).unwrap();
+        assert_eq!(stack, vec![30]);
+    }
+
+    #[test]
+    fn nested_calls() {
+        let stack = run_ops(&[
+            Op::Push(5),
+            Op::Call(15),   
+            Op::Halt,
+            
+            Op::Push(3),
+            Op::Call(30),   
+            Op::Ret,
+
+            Op::Add,
+            Op::Ret,
+        ]).unwrap();
+        assert_eq!(stack, vec![8]);
+    }
+
+    #[test]
+    fn ret_empty_stack() {
+        let mut vm = Vm::new();
+        let mut code = Vec::new();
+        Op::Ret.encode(&mut code);
+        Op::Halt.encode(&mut code);
+        let err = vm.run(&code, false, false).unwrap_err();
+        assert!(matches!(err, VmError::StackUnderflow(_)));
     }
 }

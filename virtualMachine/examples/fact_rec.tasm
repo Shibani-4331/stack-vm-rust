@@ -1,0 +1,21 @@
+; Recursive factorial: 5! = 120
+    PUSH 5
+    CALL fact
+    PRINT
+    HALT
+
+fact:
+    DUP
+    PUSH 1
+    GT
+    JZ base
+    DUP
+    PUSH 1
+    SUB
+    CALL fact
+    MUL
+    RET
+base:
+    POP
+    PUSH 1
+    RET

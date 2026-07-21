@@ -72,6 +72,12 @@ pub fn disassemble(code: &[u8])->Result<String, DecodeError> {
             Op::Jnz(addr) => {
                 output.push_str(&format!("JNZ {}\n", addr));
             }
+            Op::Call(addr)=> {
+                output.push_str(&format!("CALL {}\n", addr));
+            }
+            Op::Ret => {
+                output.push_str("RET\n");
+            }
         }
         pc+=size;
     }

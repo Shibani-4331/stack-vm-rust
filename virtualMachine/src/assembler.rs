@@ -17,7 +17,7 @@ fn collect_labels(source: &str) -> HashMap<String, usize> {
             let parts: Vec<&str> = upper.split_whitespace().collect();
             match parts[0] {
                 "PUSH" => offset += 9,
-                "JMP" | "JZ" | "JNZ" => offset += 5,
+                "JMP" | "JZ" | "JNZ" | "CALL" => offset += 5,
                 "LOAD" | "STORE" => offset += 2,
                 _ => offset += 1,
             }
@@ -76,7 +76,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                 Op::Store(slot).encode(&mut bytes);
             }
             "POP" => Op::Pop.encode(&mut bytes),
-
+            "RET" => Op::Ret.encode(&mut bytes),
             "ADD" => Op::Add.encode(&mut bytes),
             "SUB" => Op::Sub.encode(&mut bytes),
             "MUL" => Op::Mul.encode(&mut bytes),
@@ -92,7 +92,7 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
             "LT" => Op::Lt.encode(&mut bytes),
             "GT" => Op::Gt.encode(&mut bytes),
 
-            "JMP" | "JZ" | "JNZ" => {
+            "JMP" | "JZ" | "JNZ" | "CALL" => {
                 let operand = parts[1];
                 let addr: u32 = if let Ok(n) = operand.parse() {
                     n
@@ -103,9 +103,11 @@ pub fn assemble(source: &str) -> Result<Vec<u8>, String> {
                     "JMP" => Op::Jmp(addr).encode(&mut bytes),
                     "JZ" => Op::Jz(addr).encode(&mut bytes),
                     "JNZ" => Op::Jnz(addr).encode(&mut bytes),
+                    "CALL" => Op::Call(addr).encode(&mut bytes),
                     _ => unreachable!(),
                 }
             }
+
             _ => {
                 return Err(format!("Line {}: unknown instruction '{}'",line_no + 1,parts[0]));
             }

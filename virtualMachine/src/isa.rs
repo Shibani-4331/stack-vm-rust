@@ -20,6 +20,8 @@ pub enum Op {
     Jmp(u32),
     Jz(u32),
     Jnz(u32),
+    Call(u32),
+    Ret,
 }
  impl Op{
     pub fn encode(&self, out:&mut Vec<u8>){
@@ -50,6 +52,7 @@ pub enum Op {
             Op::Eq => out.push(0x20),
             Op::Lt => out.push(0x21),
             Op::Gt => out.push(0x22),
+
             Op::Jmp(addr) => {
                 out.push(0x30);
                 out.extend_from_slice(&addr.to_le_bytes());
@@ -62,6 +65,12 @@ pub enum Op {
                 out.push(0x32);
                 out.extend_from_slice(&addr.to_le_bytes());
             }
+
+            Op::Call(addr)=>{
+                out.push(0x33);
+                out.extend_from_slice(&addr.to_le_bytes());
+            }
+            Op::Ret => out.push(0x34),
         }
     }
 
@@ -135,6 +144,15 @@ pub enum Op {
                 let addr = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
                 Ok((Op::Jnz(addr), 5))
             }
+
+            0x33 => {
+                if bytes.len() < 5{
+                    return Err(DecodeError::TruncatedInstruction);
+                }
+                let addr = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
+                Ok((Op::Call(addr),5))
+            }
+            0x34 => Ok((Op::Ret, 1)),
             opcode => Err(DecodeError::InvalidOpcode(opcode))
         }
     }
@@ -170,6 +188,7 @@ mod tests {
             Op::Load(0), Op::Load(255), Op::Store(0), Op::Store(255),
             Op::Print, Op::Halt,Op::Eq, Op::Lt, Op::Gt,
             Op::Jmp(0), Op::Jmp(u32::MAX), Op::Jz(0), Op::Jz(255), Op::Jnz(0xDEADBEEF),
+            Op::Call(0),Op::Call(u32::MAX), Op::Ret,
         ];
         for op in ops {
             let mut bytes = Vec::new();
@@ -187,6 +206,7 @@ mod tests {
         assert!(matches!(Op::decode(&[0x30]), Err(DecodeError::TruncatedInstruction)));
         assert!(matches!(Op::decode(&[0x31]), Err(DecodeError::TruncatedInstruction)));
         assert!(matches!(Op::decode(&[0x32]), Err(DecodeError::TruncatedInstruction)));
+        assert!(matches!(Op::decode(&[0x33]), Err(DecodeError::TruncatedInstruction)));
     }
 
     #[test]
