@@ -39,8 +39,8 @@ cargo run -- dis examples/arithmetic.tbc
 - `;` starts a comment (rest of line ignored)
 - Mnemonics are case-insensitive
 - Must end with `HALT` (a warning is emitted otherwise)
-- Operands: `PUSH` takes an `i64`, `LOAD`/`STORE` take a `u8` slot number
-- Labels: `name:` defines a label (target for jumps), case-insensitive
+- Operands: `PUSH` takes an `i64`, `LOAD`/`STORE` take a `u8` slot number, `CALL`/`JMP`/`JZ`/`JNZ` take a label
+- Labels: `name:` defines a label (target for jumps and calls), case-insensitive
 
 ## Instruction Set
 
@@ -65,6 +65,8 @@ cargo run -- dis examples/arithmetic.tbc
 | 0x30 | `JMP label` | u32 | Unconditional jump to label |
 | 0x31 | `JZ label` | u32 | Pop, jump to label if zero |
 | 0x32 | `JNZ label` | u32 | Pop, jump to label if non-zero |
+| 0x33 | `CALL label` | u32 | Push return address, jump to label |
+| 0x34 | `RET` | - | Pop return address, jump back |
 | 0xFF | `HALT` | - | Stop execution |
 
 ## Bytecode Format (.tbc)
@@ -98,6 +100,7 @@ Example `.tasm` files are in `examples/`. See the translation table below for ea
 | F(20) | `PUSH 20, STORE 0, PUSH 0, STORE 1, PUSH 1, STORE 2, LOOP: ..., JMP LOOP, DONE: LOAD 1, PRINT` | 6765 |
 | 2¹⁰ | `PUSH 2, STORE 0, PUSH 10, STORE 1, PUSH 1, STORE 2, LOOP: ..., JMP LOOP, DONE: LOAD 2, PRINT` | 1024 |
 | is 97 prime? | `PUSH 97, STORE 0, PUSH 2, STORE 1, LOOP: ..., GT, JZ, MOD, JZ, ..., JMP LOOP` | 1 |
+| 5! (recursive) | `PUSH 5, CALL fact, fact: DUP, PUSH 1, GT, JZ base, DUP, PUSH 1, SUB, CALL fact, MUL, RET, base: POP, PUSH 1, RET` | 120 |
 
 ## Trap Handling
 
@@ -136,6 +139,7 @@ virtualMachine/
 │   ├── arithmetic.tasm
 │   ├── celsius.tasm
 │   ├── digits.tasm
+│   ├── fact_rec.tasm
 │   ├── factorial.tasm
 │   ├── fibonacci.tasm
 │   ├── gcd.tasm
@@ -158,6 +162,7 @@ virtualMachine/
 - **`isa.rs` is the single source of truth** for byte encodings. Assembler, disassembler, and VM all go through `Op::encode` / `Op::decode`. No magic byte values appear in more than one place.
 - **256 global i64 slots**, zero-initialized, for persistent state between instructions.
 - **Operand stack capped at 1024** values to prevent runaway memory usage.
+- **Separate return stack** — `CALL` pushes the return address to a dedicated `ret_stack` (not the data stack), preventing data/address corruption in nested or recursive calls.
 - **Two-pass assembler** — first pass collects label definitions with byte offsets, second pass emits code with resolved addresses.
 
 ## Build & Run
